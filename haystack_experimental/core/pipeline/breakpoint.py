@@ -8,7 +8,13 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
 
 from haystack import logging
-from haystack.dataclasses.breakpoints import AgentBreakpoint, PipelineSnapshot, PipelineState, ToolBreakpoint
+from haystack.core.pipeline.utils import _deepcopy_with_exceptions
+from haystack.dataclasses.breakpoints import (
+    AgentBreakpoint,
+    PipelineSnapshot,
+    PipelineState,
+    ToolBreakpoint,
+)
 from haystack.utils.base_serialization import _serialize_value_with_schema
 from haystack.utils.misc import _get_output_dir
 
@@ -16,7 +22,9 @@ from haystack_experimental.dataclasses.breakpoints import AgentSnapshot
 
 if TYPE_CHECKING:
     from haystack_experimental.components.agents.agent import _ExecutionContext
-    from haystack_experimental.components.agents.human_in_the_loop import ToolExecutionDecision
+    from haystack_experimental.components.agents.human_in_the_loop import (
+        ToolExecutionDecision,
+    )
 
 
 logger = logging.getLogger(__name__)
@@ -44,8 +52,12 @@ def _create_agent_snapshot(
     """
     return AgentSnapshot(
         component_inputs={
-            "chat_generator": _serialize_value_with_schema(deepcopy(component_inputs["chat_generator"])),
-            "tool_invoker": _serialize_value_with_schema(deepcopy(component_inputs["tool_invoker"])),
+            "chat_generator": _serialize_value_with_schema(
+                _deepcopy_with_exceptions(component_inputs["chat_generator"])
+            ),
+            "tool_invoker": _serialize_value_with_schema(
+                _deepcopy_with_exceptions(component_inputs["tool_invoker"])
+            ),
         },
         component_visits=component_visits,
         break_point=agent_breakpoint,
@@ -93,9 +105,14 @@ def _create_pipeline_snapshot_from_tool_invoker(
         component_visits=execution_context.component_visits,
         agent_breakpoint=agent_breakpoint,
         component_inputs={
-            "chat_generator": {"messages": messages[:-1], **execution_context.chat_generator_inputs},
+            "chat_generator": {
+                "messages": messages[:-1],
+                **execution_context.chat_generator_inputs,
+            },
             "tool_invoker": {
-                "messages": messages[-1:],  # tool invoker consumes last msg from the chat_generator, contains tool call
+                "messages": messages[
+                    -1:
+                ],  # tool invoker consumes last msg from the chat_generator, contains tool call
                 "state": execution_context.state,
                 **execution_context.tool_invoker_inputs,
             },
@@ -105,7 +122,9 @@ def _create_pipeline_snapshot_from_tool_invoker(
     if parent_snapshot is None:
         # Create an empty pipeline snapshot if no parent snapshot is provided
         final_snapshot = PipelineSnapshot(
-            pipeline_state=PipelineState(inputs={}, component_visits={}, pipeline_outputs={}),
+            pipeline_state=PipelineState(
+                inputs={}, component_visits={}, pipeline_outputs={}
+            ),
             timestamp=agent_snapshot.timestamp,
             break_point=agent_snapshot.break_point,
             agent_snapshot=agent_snapshot,
