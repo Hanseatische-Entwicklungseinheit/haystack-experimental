@@ -128,7 +128,7 @@ def _create_pipeline_snapshot_from_tool_invoker(
             timestamp=agent_snapshot.timestamp,
             break_point=agent_snapshot.break_point,
             agent_snapshot=agent_snapshot,
-            original_input_data={},
+            original_input_data=_serialize_value_with_schema({}),
             ordered_component_names=[],
             include_outputs_from=set(),
         )
